@@ -1,0 +1,10 @@
+TARGETNAME = vexore
+TARGETTYPE = DRIVER
+TARGETPATH = obj
+
+SOURCES = driver.cpp \
+          util.cpp \
+          commands.cpp \
+          physical.cpp
+
+MSC_WARNING_LEVEL = /W4

@@ -1,0 +1,133 @@
+#include "../core/Types.h"
+#include "../core/Globals.h"
+
+volatile byte g_runningFlag = 1;
+volatile dword g_moduleHandle = 0;
+volatile qword g_gameBase = 0;
+volatile qword g_signatureOffA = 0;
+volatile qword g_signatureOffB = 0;
+volatile byte g_baseCemented = 0;
+volatile byte g_connected = 0;
+dword g_espWindowWidth = 0;
+dword g_espWindowHeight = 0;
+
+struct CheatConfig g_config;
+
+static void ConfigSetDefaults(struct CheatConfig* c)
+{
+    c->esp.enabled = 1;
+    c->esp.lerpSmooth = 0.15f;
+    c->esp.maxDistance = 150.0f;
+    c->esp.boxType = BoxEsp2D;
+    c->esp.boxOutline = 1;
+    c->esp.boxFill = 0;
+    c->esp.boxFillAlpha = 0.25f;
+    c->esp.boxGradient = 0;
+    c->esp.boxThickness = 1.5f;
+    c->esp.boxDistanceFade = 0.0f;
+    c->esp.showHealthBar = 1;
+    c->esp.showRecoverBar = 0;
+    c->esp.skeletonType = SkeletonLines;
+    c->esp.skeletonDots = 0;
+    c->esp.nameUppercase = 0;
+    c->esp.nameShadow = 1;
+    c->esp.nameScale = 14.0f;
+    c->esp.nicknameOffX = 0.0f;
+    c->esp.nicknameOffY = -12.0f;
+    c->esp.nameAngle = 0.0f;
+    c->esp.colBoxSurv.r = 0.20f;
+    c->esp.colBoxSurv.g = 0.85f;
+    c->esp.colBoxSurv.b = 0.35f;
+    c->esp.colBoxSurv.a = 1.0f;
+    c->esp.colBoxKiller.r = 0.95f;
+    c->esp.colBoxKiller.g = 0.20f;
+    c->esp.colBoxKiller.b = 0.20f;
+    c->esp.colBoxKiller.a = 1.0f;
+    c->esp.colBoxHealthy.r = 0.30f;
+    c->esp.colBoxHealthy.g = 0.90f;
+    c->esp.colBoxHealthy.b = 0.40f;
+    c->esp.colBoxHealthy.a = 1.0f;
+    c->esp.colBoxInjured.r = 0.95f;
+    c->esp.colBoxInjured.g = 0.75f;
+    c->esp.colBoxInjured.b = 0.10f;
+    c->esp.colBoxInjured.a = 1.0f;
+    c->esp.colBoxDowned.r = 0.90f;
+    c->esp.colBoxDowned.g = 0.10f;
+    c->esp.colBoxDowned.b = 0.10f;
+    c->esp.colBoxDowned.a = 1.0f;
+    c->esp.colName.r = 1.0f;
+    c->esp.colName.g = 1.0f;
+    c->esp.colName.b = 1.0f;
+    c->esp.colName.a = 1.0f;
+    c->esp.colHealthBar.r = 0.20f;
+    c->esp.colHealthBar.g = 0.90f;
+    c->esp.colHealthBar.b = 0.30f;
+    c->esp.colHealthBar.a = 1.0f;
+    c->aim.enabled = 0;
+    c->aim.key = 0;
+    c->aim.keyMode = AimKeyHold;
+    c->aim.fovRadius = 250.0f;
+    c->aim.smoothing = 6.0f;
+    c->aim.bonePriority[0] = 0;
+    c->aim.bonePriority[1] = 1;
+    c->aim.bonePriority[2] = 2;
+    c->aim.bonePriority[3] = 3;
+    c->skillCheck.enabled = 0;
+    c->skillCheck.zoneMode = SkillCheckDefaultZones;
+    c->skillCheck.greatChance = 0.0f;
+    c->speedHack.enabled = 0;
+    c->speedHack.value = 1.0f;
+    c->aura.masterSwitch = 0;
+    c->aura.hatch.enabled = 0;
+    c->aura.hatch.distance = 64.0f;
+    c->aura.hatch.color.r = 1.0f;
+    c->aura.hatch.color.g = 0.0f;
+    c->aura.hatch.color.b = 1.0f;
+    c->aura.hatch.color.a = 1.0f;
+    c->aura.hooks.enabled = 0;
+    c->aura.hooks.distance = 64.0f;
+    c->aura.hooks.color.r = 1.0f;
+    c->aura.hooks.color.g = 0.0f;
+    c->aura.hooks.color.b = 0.0f;
+    c->aura.hooks.color.a = 1.0f;
+    c->aura.chests.enabled = 0;
+    c->aura.chests.distance = 64.0f;
+    c->aura.chests.color.r = 1.0f;
+    c->aura.chests.color.g = 0.8f;
+    c->aura.chests.color.b = 0.2f;
+    c->aura.chests.color.a = 1.0f;
+    c->aura.totems.enabled = 0;
+    c->aura.totems.distance = 64.0f;
+    c->aura.totems.color.r = 0.3f;
+    c->aura.totems.color.g = 0.9f;
+    c->aura.totems.color.b = 1.0f;
+    c->aura.totems.color.a = 1.0f;
+    c->aura.pallets.enabled = 0;
+    c->aura.pallets.distance = 48.0f;
+    c->aura.pallets.color.r = 0.9f;
+    c->aura.pallets.color.g = 0.9f;
+    c->aura.pallets.color.b = 0.2f;
+    c->aura.pallets.color.a = 1.0f;
+    c->aura.trapsMaster = 0;
+    c->aura.trapsDistance = 48.0f;
+    c->aura.trapBear = 1;
+    c->aura.trapZombie = 1;
+    c->aura.colorTrapBear.r = 1.0f;
+    c->aura.colorTrapBear.g = 0.5f;
+    c->aura.colorTrapBear.b = 0.0f;
+    c->aura.colorTrapBear.a = 1.0f;
+    c->aura.colorTrapZombie.r = 0.6f;
+    c->aura.colorTrapZombie.g = 0.2f;
+    c->aura.colorTrapZombie.b = 1.0f;
+    c->aura.colorTrapZombie.a = 1.0f;
+    c->aura.windowAuraMaxDist = 64.0f;
+    c->theme.r = 0.15f;
+    c->theme.g = 0.15f;
+    c->theme.b = 0.20f;
+    c->theme.alpha = 0.95f;
+}
+
+void ConfigInit(struct CheatConfig* c)
+{
+    ConfigSetDefaults(c);
+}
